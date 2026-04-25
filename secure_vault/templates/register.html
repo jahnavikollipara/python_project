@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register – SecureVault</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body class="auth-body">
+
+    <div class="auth-wrapper">
+        <!-- Left panel -->
+        <div class="auth-panel-left">
+            <div class="vault-logo">
+                <div class="vault-icon">🔐</div>
+                <h1 class="brand-name">SecureVault</h1>
+                <p class="brand-tagline">Your files, encrypted and safe.</p>
+            </div>
+            <div class="features-list">
+                <div class="feature-item"><span class="feat-icon">🔒</span> AES-128 Fernet encryption</div>
+                <div class="feature-item"><span class="feat-icon">👤</span> Private per-user vaults</div>
+                <div class="feature-item"><span class="feat-icon">📁</span> Upload, download, delete</div>
+                <div class="feature-item"><span class="feat-icon">🛡️</span> Hashed passwords, no plaintext</div>
+            </div>
+        </div>
+
+        <!-- Right panel: form -->
+        <div class="auth-panel-right">
+            <div class="auth-card">
+                <h2 class="auth-title">Create account</h2>
+                <p class="auth-sub">Set up your secure vault</p>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endwith %}
+
+                <form method="POST" action="{{ url_for('register') }}" class="auth-form">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" name="username"
+                               placeholder="choose_a_username" minlength="3" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email"
+                               placeholder="you@example.com" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" name="password"
+                                   placeholder="min 6 chars" minlength="6" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirm_password">Confirm</label>
+                            <input type="password" id="confirm_password" name="confirm_password"
+                                   placeholder="repeat password" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">
+                        Create Vault →
+                    </button>
+                </form>
+
+                <p class="auth-switch">
+                    Already have an account? <a href="{{ url_for('login') }}">Sign in</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard – SecureVault</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body class="dash-body">
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <span class="nav-icon">🔐</span>
+            <span class="nav-name">SecureVault</span>
+        </div>
+        <div class="nav-right">
+            <span class="nav-user">👤 {{ username }}</span>
+            <a href="{{ url_for('logout') }}" class="btn btn-ghost btn-sm">Logout</a>
+        </div>
+    </nav>
+
+    <!-- Flash messages -->
+    <div class="flash-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible">
+                    {{ message }}
+                    <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+                </div>
+            {% endfor %}
+        {% endwith %}
+    </div>
+
+    <main class="dash-main">
+
+        <!-- Header -->
+        <div class="dash-header">
+            <div>
+                <h1 class="dash-title">Your Vault</h1>
+                <p class="dash-sub">{{ files|length }} encrypted file{% if files|length != 1 %}s{% endif %} stored</p>
+            </div>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="upload-section">
+            <form method="POST" action="{{ url_for('upload_file') }}"
+                  enctype="multipart/form-data" id="uploadForm">
+
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-icon">📤</div>
+                    <p class="upload-main">Drop a file here or <label for="fileInput" class="upload-link">browse</label></p>
+                    <p class="upload-hint">Max 16 MB · txt pdf png jpg gif doc docx xls xlsx zip mp4 mp3 csv json py md</p>
+                    <input type="file" id="fileInput" name="file" class="file-input"
+                           onchange="handleFileSelect(this)">
+                </div>
+
+                <div class="upload-preview" id="uploadPreview" style="display:none;">
+                    <div class="preview-info">
+                        <span class="preview-icon">📄</span>
+                        <span class="preview-name" id="previewName"></span>
+                        <span class="preview-size" id="previewSize"></span>
+                    </div>
+                    <div class="preview-actions">
+                        <button type="submit" class="btn btn-primary">
+                            🔒 Encrypt &amp; Upload
+                        </button>
+                        <button type="button" class="btn btn-ghost" onclick="clearFile()">Cancel</button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+
+        <!-- Files Table -->
+        <div class="files-section">
+            <h2 class="section-title">Encrypted Files</h2>
+
+            {% if files %}
+            <div class="files-table-wrap">
+                <table class="files-table">
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th>Type</th>
+                            <th>Size</th>
+                            <th>Uploaded</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for file in files %}
+                        <tr class="file-row">
+                            <td class="file-name-cell">
+                                <span class="file-dot"></span>
+                                {{ file.original_name }}
+                            </td>
+                            <td>
+                                <span class="badge badge-ext">{{ file.ext }}</span>
+                            </td>
+                            <td class="file-size">{{ file.file_size }}</td>
+                            <td class="file-date">{{ file.uploaded_at }}</td>
+                            <td class="file-actions">
+                                <a href="{{ url_for('download_file', file_id=file.id) }}"
+                                   class="btn btn-sm btn-download" title="Download & Decrypt">
+                                    ⬇ Download
+                                </a>
+                                <form method="POST"
+                                      action="{{ url_for('delete_file', file_id=file.id) }}"
+                                      style="display:inline;"
+                                      onsubmit="return confirm('Delete {{ file.original_name }}? This cannot be undone.')">
+                                    <button type="submit" class="btn btn-sm btn-delete" title="Delete">
+                                        🗑 Delete
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🗄️</div>
+                <p class="empty-title">Your vault is empty</p>
+                <p class="empty-hint">Upload your first file above to get started.</p>
+            </div>
+            {% endif %}
+        </div>
+
+    </main>
+
+    <footer class="dash-footer">
+        <span>SecureVault · All files are encrypted with Fernet (AES-128) · 
+              Your files are only visible to you</span>
+    </footer>
+
+    <script>
+        function handleFileSelect(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                document.getElementById('previewName').textContent = file.name;
+                document.getElementById('previewSize').textContent = formatBytes(file.size);
+                document.getElementById('uploadZone').style.display = 'none';
+                document.getElementById('uploadPreview').style.display = 'flex';
+            }
+        }
+
+        function clearFile() {
+            document.getElementById('fileInput').value = '';
+            document.getElementById('uploadZone').style.display = 'flex';
+            document.getElementById('uploadPreview').style.display = 'none';
+        }
+
+        function formatBytes(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1048576).toFixed(1) + ' MB';
+        }
+
+        // Drag-and-drop support
+        const zone = document.getElementById('uploadZone');
+        zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+        zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+        zone.addEventListener('drop', e => {
+            e.preventDefault();
+            zone.classList.remove('drag-over');
+            const dt = e.dataTransfer;
+            const input = document.getElementById('fileInput');
+            input.files = dt.files;
+            handleFileSelect(input);
+        });
+
+        // Auto-dismiss alerts after 5s
+        setTimeout(() => {
+            document.querySelectorAll('.alert').forEach(a => a.remove());
+        }, 5000);
+    </script>
+
+</body>
+</html>
